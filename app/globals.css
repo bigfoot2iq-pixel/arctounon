@@ -1,26 +1,351 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ---- Design tokens ---------------------------------------------------- */
+@theme {
+  --color-space: #05060e;
+  --color-abyss: #080b18;
+  --color-surface: #0c1222;
+  --color-surface-2: #111a2e;
+
+  --color-ice: #5aacff; /* primary electric blue */
+  --color-glacier: #27e2e8; /* cyan */
+  --color-teal: #2fe6c4; /* aurora teal */
+  --color-violet: #8b7bff; /* violet accent */
+
+  --color-frost: #eaf1ff; /* primary text */
+  --color-muted: #8ea3c9; /* secondary text */
+  --color-faint: #5a6a8c; /* tertiary text */
+
+  --color-background: var(--color-space);
+  --color-foreground: var(--color-frost);
+
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --font-display: var(--font-unbounded);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ---- Base ------------------------------------------------------------- */
+* {
+  border-color: color-mix(in oklab, var(--color-ice) 12%, transparent);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-space);
+  color: var(--color-frost);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-glacier) 40%, transparent);
+  color: var(--color-frost);
+}
+
+/* Custom slim scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-space);
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-ice) 30%, var(--color-abyss));
+  border-radius: 999px;
+  border: 2px solid var(--color-space);
+}
+
+/* ---- Fixed atmosphere layers ----------------------------------------- */
+.bg-layers {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Deep vertical wash */
+.bg-base {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 50% -10%, #0d1b39 0%, transparent 55%),
+    radial-gradient(100% 80% at 80% 110%, #10233f 0%, transparent 60%),
+    linear-gradient(180deg, #05060e 0%, #070a16 60%, #05060e 100%);
+}
+
+/* Aurora blobs drifting */
+.bg-aurora {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(35% 45% at 20% 25%, color-mix(in oklab, var(--color-ice) 55%, transparent) 0%, transparent 70%),
+    radial-gradient(30% 40% at 80% 20%, color-mix(in oklab, var(--color-violet) 45%, transparent) 0%, transparent 70%),
+    radial-gradient(40% 45% at 60% 80%, color-mix(in oklab, var(--color-glacier) 40%, transparent) 0%, transparent 70%);
+  filter: blur(70px) saturate(140%);
+  opacity: 0.5;
+  animation: drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  0% {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(4%, 3%, 0) scale(1.12);
+  }
+}
+
+/* Star field via layered radial dots */
+.bg-stars,
+.bg-stars::after {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, #dfeaff 50%, transparent),
+    radial-gradient(1.5px 1.5px at 70% 65%, #cfe0ff 50%, transparent),
+    radial-gradient(1px 1px at 40% 80%, #bcd3ff 50%, transparent),
+    radial-gradient(1px 1px at 85% 25%, #ffffff 50%, transparent),
+    radial-gradient(1.5px 1.5px at 55% 15%, #dfeaff 50%, transparent),
+    radial-gradient(1px 1px at 10% 60%, #b9ceff 50%, transparent);
+  background-repeat: repeat;
+  background-size: 700px 700px;
+  opacity: 0.5;
+  animation: twinkle 5s ease-in-out infinite alternate;
+}
+.bg-stars::after {
+  content: "";
+  background-size: 480px 480px;
+  opacity: 0.35;
+  animation-delay: -2.5s;
+  animation-duration: 7s;
+}
+
+@keyframes twinkle {
+  0% {
+    opacity: 0.25;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+/* Grain overlay */
+.bg-grain {
+  position: fixed;
+  inset: 0;
+  z-index: -9;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- Reusable surfaces ------------------------------------------------ */
+.glass {
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--color-surface) 88%, transparent),
+    color-mix(in oklab, var(--color-abyss) 80%, transparent)
+  );
+  border: 1px solid color-mix(in oklab, var(--color-ice) 16%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--color-frost) 8%, transparent),
+    0 24px 60px -30px color-mix(in oklab, var(--color-ice) 40%, transparent);
+}
+
+.card-hover {
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.4s, box-shadow 0.4s;
+}
+.card-hover:hover {
+  transform: translateY(-6px);
+  border-color: color-mix(in oklab, var(--color-glacier) 45%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--color-frost) 12%, transparent),
+    0 30px 70px -28px color-mix(in oklab, var(--color-glacier) 55%, transparent);
+}
+
+/* Gradient hairline border ring */
+.ring-aurora {
+  position: relative;
+}
+.ring-aurora::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    130deg,
+    var(--color-ice),
+    var(--color-glacier),
+    var(--color-violet)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ---- Text & accents --------------------------------------------------- */
+.text-aurora {
+  background: linear-gradient(100deg, var(--color-ice), var(--color-glacier) 45%, var(--color-violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.eyebrow {
+  font-family: var(--font-mono), monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  font-size: 0.7rem;
+  color: var(--color-glacier);
+}
+
+.glow-text {
+  text-shadow: 0 0 32px color-mix(in oklab, var(--color-ice) 55%, transparent);
+}
+
+/* ---- Buttons ---------------------------------------------------------- */
+.btn-aurora {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background: linear-gradient(100deg, var(--color-ice), var(--color-glacier));
+  color: #04121f;
+  box-shadow: 0 12px 40px -12px color-mix(in oklab, var(--color-glacier) 80%, transparent);
+  transition: transform 0.25s, box-shadow 0.25s, filter 0.25s;
+}
+.btn-aurora:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 18px 50px -12px color-mix(in oklab, var(--color-glacier) 90%, transparent);
+}
+.btn-aurora:active {
+  transform: translateY(0);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  border-radius: 999px;
+  color: var(--color-frost);
+  border: 1px solid color-mix(in oklab, var(--color-ice) 30%, transparent);
+  background: color-mix(in oklab, var(--color-surface) 60%, transparent);
+  transition: transform 0.25s, border-color 0.25s, background 0.25s;
+}
+.btn-ghost:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--color-glacier) 60%, transparent);
+  background: color-mix(in oklab, var(--color-surface-2) 80%, transparent);
+}
+
+.btn-soon {
+  cursor: not-allowed;
+  filter: grayscale(0.15);
+}
+
+/* Pulsing "coming soon" status dot */
+.pulse-dot {
+  position: relative;
+}
+.pulse-dot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  75%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* ---- Marquee ---------------------------------------------------------- */
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: scroll-x 42s linear infinite;
+}
+.marquee-slow {
+  animation-duration: 60s;
+}
+.marquee:hover {
+  animation-play-state: paused;
+}
+@keyframes scroll-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---- Entrance animations --------------------------------------------- */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise {
+  animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translateY(-14px) rotate(var(--r, 0deg));
+  }
+}
+.float-y {
+  animation: float-y 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }

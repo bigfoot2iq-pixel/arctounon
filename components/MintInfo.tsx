@@ -1,10 +1,4 @@
-import {
-  SITE,
-  TRAIT_CATEGORIES,
-  UTILITIES,
-  BRIDGE_STEPS,
-  MARKETPLACES,
-} from "@/lib/collection";
+import { SITE, UTILITIES, BRIDGE_STEPS, MARKETPLACES } from "@/lib/collection";
 import { SectionHeading } from "./ui/SectionHeading";
 import { Reveal } from "./ui/Reveal";
 import { ArrowUpRight } from "./icons";
@@ -39,42 +33,30 @@ export function MintInfo() {
       />
 
       <div className="mt-8 grid gap-4 lg:grid-cols-3">
-        {/* Supply */}
-        <Reveal className="glass card-hover flex flex-col rounded-2xl p-4 sm:p-5 lg:row-span-2">
+        {/* Infos */}
+        <Reveal className="glass card-hover flex flex-col rounded-2xl p-4 sm:p-5">
           <IconBadge>
             <svg viewBox="0 0 24 24" className="h-4 w-4" {...stroke}>
               <path d="M12 3 3 7.5 12 12l9-4.5L12 3Z" />
               <path d="m3 12 9 4.5L21 12M3 16.5 12 21l9-4.5" />
             </svg>
           </IconBadge>
-          <h3 className="mt-4 font-display text-lg font-bold text-frost">Supply</h3>
+          <h3 className="mt-4 font-display text-lg font-bold text-frost">Infos</h3>
           <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
             A fixed collection of{" "}
             <span className="font-mono text-frost">{SITE.supply.toLocaleString()}</span> pandas —
             each generated from 6 trait layers. No stealth reprints, no hidden mints.
           </p>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="mt-auto grid grid-cols-2 gap-3 pt-4">
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
               <p className="font-mono text-2xl font-bold text-aurora">{SITE.supply.toLocaleString()}</p>
               <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.18em]">Total</p>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
-              <p className="font-mono text-2xl font-bold text-aurora">6</p>
+              <p className="font-mono text-2xl font-bold text-aurora">50+</p>
               <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.18em]">Traits</p>
             </div>
-          </div>
-
-          <p className="eyebrow mt-5 !text-[9px] !tracking-[0.18em]">Trait categories</p>
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
-            {TRAIT_CATEGORIES.map((t) => (
-              <span
-                key={t.name}
-                className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-muted"
-              >
-                {t.name}
-              </span>
-            ))}
           </div>
         </Reveal>
 
@@ -114,14 +96,14 @@ export function MintInfo() {
         </Reveal>
 
         {/* Utility */}
-        <Reveal delay={120} className="glass card-hover flex flex-col rounded-2xl p-4 sm:p-5">
+        <Reveal delay={120} className="glass card-hover flex flex-col rounded-2xl p-4 sm:p-5 lg:col-span-2">
           <IconBadge>
             <svg viewBox="0 0 24 24" className="h-4 w-4" {...stroke}>
               <path d="M13 2 4.5 13.5H11l-1 8L19.5 10H13l0-8Z" />
             </svg>
           </IconBadge>
           <h3 className="mt-4 font-display text-lg font-bold text-frost">Utility</h3>
-          <ul className="mt-3 space-y-3">
+          <ul className="mt-3 grid gap-x-8 gap-y-3.5 sm:grid-flow-col sm:grid-rows-2">
             {UTILITIES.map((u) => (
               <li key={u.title} className="flex gap-2.5">
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-glacier" />

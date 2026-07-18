@@ -18,7 +18,7 @@ export function Roadmap() {
             Built for <span className="text-aurora">the long run</span>
           </>
         }
-        desc="No roadmap theatre. Three phases, one promise — wait for the end and watch real utility drop."
+        desc="Six phases, one promise — from foundation to airdrop, watch real utility drop."
       />
 
       <div className="mt-8 grid gap-4 md:grid-cols-3">

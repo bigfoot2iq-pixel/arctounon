@@ -49,20 +49,20 @@ export const TRAIT_CATEGORIES = [
 
 export const UTILITIES = [
   {
-    title: "Holder-gated access",
-    body: "Every Arctounon is your key — raffles, allowlists and drops open first to holders.",
+    title: "Launchpad on Arc",
+    body: "Launch your NFT collection directly on Arc Chain. Arctounon provides a simple, fast, and reliable launchpad for creators building on Arc.",
   },
   {
-    title: "Staking & rewards",
-    body: "Lock your panda to earn. Rewards mechanics roll out post-mint, native to Arc.",
+    title: "Raffle Platform",
+    body: "The first dedicated raffle platform on Arc Chain. Participate in exclusive NFT raffles, giveaways, and community campaigns.",
   },
   {
-    title: "Real utility, at the end",
-    body: "No roadmap theatre. Utility ships when it's ready — and it drops all at once.",
+    title: "Staking & Rewards",
+    body: "Stake your Arctounon Panda to earn rewards and unlock exclusive ecosystem benefits available only to holders.",
   },
   {
-    title: "On-chain on Arc",
-    body: "Minted natively on the Arc Chain — fast, cheap, stablecoin-grade settlement.",
+    title: "Arctounon Token",
+    body: "The native Arctounon token powers the ecosystem. Holders will receive exclusive airdrops and gain access to future utilities and governance.",
   },
 ];
 
@@ -87,7 +87,6 @@ export const BRIDGE_STEPS = [
 export const MARKETPLACES = [
   { name: "Arc Marketplace", status: "Coming soon" },
   { name: "OpenSea", status: "Coming soon" },
-  { name: "Magic Eden", status: "Coming soon" },
 ];
 
 // Launchpad — upcoming drops. Images point to local art; names shown, descriptions teased.
@@ -115,40 +114,113 @@ export const LAUNCHPAD = [
 export const ROADMAP = [
   {
     phase: "Phase 01",
-    title: "The Gathering",
+    title: "Foundation",
     status: "Now",
-    points: ["Reveal 2222 pandas", "Grow the pack on X", "Allowlist & raffle warm-up"],
+    points: [
+      "Launch the official website",
+      "Build the Arctounon community",
+      "Reveal the 2,222 Panda NFT collection",
+      "Strategic partnerships across the Arc ecosystem",
+      "Whitelist campaign & community events",
+    ],
   },
   {
     phase: "Phase 02",
-    title: "The Mint",
+    title: "Mint",
     status: "Next",
-    points: ["Official mint on Arc", "Tiered fees, 1–5 per wallet", "Marketplace listings go live"],
+    points: [
+      "Launch the 2,222 Panda NFT collection",
+      "Marketplace listing",
+      "Holder verification",
+      "Exclusive holder channels & benefits",
+      "Community growth initiatives",
+    ],
   },
   {
     phase: "Phase 03",
-    title: "The Drop",
+    title: "Holder Utility",
     status: "Soon",
-    points: ["Staking goes live", "Holder-only utility unlocks", "Wait for the end 🐼"],
+    points: [
+      "Daily reward system",
+      "NFT Staking",
+      "Exclusive raffles for holders",
+      "Community quests & leaderboard",
+      "Holder-only giveaways",
+    ],
+  },
+  {
+    phase: "Phase 04",
+    title: "Ecosystem",
+    status: "Soon",
+    points: [
+      "Arctounon Launchpad",
+      "Community governance",
+      "Project collaborations",
+      "Merchandise collection",
+      "Ecosystem expansion",
+    ],
+  },
+  {
+    phase: "Phase 05",
+    title: "Token",
+    status: "Soon",
+    points: [
+      "Official Arctounon Token launch",
+      "Token utility across the ecosystem",
+      "Staking rewards in token",
+      "Liquidity & ecosystem growth",
+      "Future integrations",
+    ],
+  },
+  {
+    phase: "Phase 06",
+    title: "Airdrop",
+    status: "Soon",
+    points: [
+      "Snapshot for holders & active community",
+      "Token Airdrop",
+      "Reward top supporters",
+      "Community incentive campaigns",
+    ],
   },
 ];
 
 export const FAQ = [
   {
     q: "What is Arctounon?",
-    a: "A collection of 2222 pandas minted natively on the Arc Chain. Built for the long run — real utility over empty hype.",
+    a: "Arctounon is a collection of 2,222 unique Panda NFTs built on the Arc blockchain, designed to combine digital collectibles with long-term community utility.",
   },
   {
-    q: "When does minting open?",
-    a: "Soon. The mint button is live as “Coming Soon” for now — follow @Arctounon on X so you don't miss the go-live.",
+    q: "How many NFTs are available?",
+    a: "There are 2,222 unique Panda NFTs in the collection.",
   },
   {
-    q: "How much does it cost to mint?",
-    a: "You can mint 1 to 5 per transaction, and each amount tier has its own fee. Fees are set on-chain by the owner and can be updated before launch.",
+    q: "Which blockchain is Arctounon built on?",
+    a: "Arctounon is built on the Arc blockchain.",
   },
   {
-    q: "What chain is this on?",
-    a: "Arc Chain. Bridge your funds to Arc ahead of mint day so you're ready when it opens.",
+    q: "What utilities will holders receive?",
+    a: "Holders will have access to staking, raffles, launchpad allocations, token rewards, airdrops, exclusive events, and future ecosystem benefits.",
+  },
+  {
+    q: "Will there be a token?",
+    a: "Yes. Arctounon plans to launch its own ecosystem token with utilities across staking, rewards, and future platform features.",
+  },
+  {
+    q: "Will holders receive an airdrop?",
+    a: "Yes. Eligible holders and active community members will qualify for future airdrops based on announced criteria.",
+  },
+  {
+    q: "Is staking available?",
+    a: "Yes. NFT staking will allow holders to earn ecosystem rewards and unlock additional benefits.",
+  },
+  {
+    q: "What is the Arctounon Launchpad?",
+    a: "The Launchpad will provide holders with priority access and allocations for selected NFT and ecosystem projects.",
+  },
+  {
+    q: "How can I stay updated?",
+    a: "Follow our official social media channels and join the community to receive the latest announcements and updates.",
   },
 ];
 

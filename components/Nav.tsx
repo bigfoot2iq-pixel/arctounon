@@ -62,10 +62,10 @@ export function Nav() {
                   key={l.href}
                   href={l.href}
                   className={
-                    "rounded-full px-3.5 py-2 text-sm transition-colors " +
+                    "rounded-full px-3.5 py-2 text-sm font-medium transition-colors " +
                     (active
-                      ? "bg-white/[0.06] text-frost"
-                      : "text-muted hover:bg-white/[0.04] hover:text-frost")
+                      ? "bg-ice/15 text-ice"
+                      : "text-muted hover:bg-white/[0.05] hover:text-frost")
                   }
                 >
                   {l.label}
@@ -86,16 +86,6 @@ export function Nav() {
               <XIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Follow</span>
             </a>
-            <Link
-              href="/launchpad"
-              className="btn-aurora btn-soon hidden h-10 px-4 text-sm sm:inline-flex"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="pulse-dot absolute inline-flex h-2 w-2 rounded-full text-[#04121f]" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#04121f]" />
-              </span>
-              Mint soon
-            </Link>
             <ConnectButton className="hidden sm:inline-flex" />
 
             {/* Mobile toggle */}
@@ -128,9 +118,9 @@ export function Nav() {
                 href={l.href}
                 onClick={() => setOpen(false)}
                 className={
-                  "rounded-xl px-4 py-3 text-sm transition-colors " +
+                  "rounded-xl px-4 py-3 text-sm font-medium transition-colors " +
                   (isActive(l.href)
-                    ? "bg-white/[0.06] text-frost"
+                    ? "bg-ice/15 text-ice"
                     : "text-muted hover:bg-white/[0.05] hover:text-frost")
                 }
               >

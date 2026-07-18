@@ -4,7 +4,6 @@ import { useState } from "react";
 import Image from "next/image";
 import {
   SITE,
-  TIERS,
   MINT_LIVE,
   MAX_PER_WALLET,
   SHOWCASE,
@@ -95,12 +94,6 @@ function MintCta({ qty }: { qty: number }) {
 export function LaunchpadMint() {
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
-
-  const tier = TIERS[Math.min(qty, TIERS.length) - 1];
-  const total = tier.fee;
-  const perUnit = total / qty;
-  const base = TIERS[0].fee / TIERS[0].amount;
-  const savings = Math.max(0, Math.round((1 - perUnit / base) * 100));
 
   const dec = () => setQty((q) => Math.max(1, q - 1));
   const inc = () => setQty((q) => Math.min(MAX_PER_WALLET, q + 1));
@@ -225,7 +218,7 @@ export function LaunchpadMint() {
             <div>
               <p className="eyebrow !text-[9px] !tracking-[0.16em]">Price</p>
               <p className="mt-0.5 font-mono text-lg font-bold text-frost">
-                {perUnit.toFixed(3)} <span className="text-sm text-muted">{SITE.currency}</span>
+                TBA <span className="text-sm text-muted">{SITE.currency}</span>
               </p>
             </div>
             <p className="font-mono text-[11px] text-faint">per panda</p>
@@ -262,12 +255,7 @@ export function LaunchpadMint() {
           <div className="mt-3 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-3.5 py-2.5 font-mono text-[13px]">
             <span className="text-muted">Total</span>
             <span className="flex items-center gap-2 text-sm font-bold text-frost">
-              {total.toFixed(3)} {SITE.currency}
-              {savings > 0 ? (
-                <span className="rounded-full bg-teal/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-teal">
-                  save {savings}%
-                </span>
-              ) : null}
+              TBA {SITE.currency}
             </span>
           </div>
 

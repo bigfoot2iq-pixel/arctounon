@@ -18,7 +18,7 @@ export const SITE = {
     x: "https://x.com/Arctounon",
     arc: "https://www.arc.io/",
   },
-  currency: "ARC", // mint fee denomination — set on-chain by the owner
+  currency: "USDC", // mint fee denomination — set on-chain by the owner
 } as const;
 
 // Mint amount tiers 1..5 — each tier has its own fee, configurable on-chain by the owner.
@@ -183,7 +183,6 @@ export type Phase = {
 };
 
 export const MINT_SCHEDULE: Phase[] = [
-  { name: "Allowlist · GTD", note: "Guaranteed spot for the pack. Time TBA.", price: "0.05 ARC", status: "Soon" },
-  { name: "FCFS", note: "First come, first served for leftovers.", price: "0.05 ARC", status: "Soon" },
-  { name: "Public", note: "Open to everyone on Arc. Time TBA.", price: "0.05 ARC", status: "Soon" },
+  { name: "Allowlist", note: "Guaranteed spot for the pack. Time TBA.", price: "TBA", status: "Soon" },
+  { name: "Public", note: "Open to everyone on Arc. Time TBA.", price: "TBA", status: "Soon" },
 ];

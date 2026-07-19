@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { SITE } from "@/lib/collection";
 import { XIcon, ArrowRight } from "./icons";
 import { HeroShowcase } from "./HeroShowcase";
+import { HeroMintCta, HeroMintStat } from "./MintLive";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -35,9 +35,7 @@ export function Hero() {
           </p>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <Link href="/launchpad" className="btn-aurora btn-soon h-11 px-6 text-sm">
-              Mint — Coming Soon
-            </Link>
+            <HeroMintCta />
             <a
               href={SITE.links.x}
               target="_blank"
@@ -53,7 +51,7 @@ export function Hero() {
           <div className="mt-1 grid w-full max-w-md grid-cols-3 gap-4 border-t border-white/10 pt-5">
             <Stat label="Supply" value={SITE.supply.toLocaleString()} />
             <Stat label="Chain" value={SITE.chainName} />
-            <Stat label="Mint" value="Soon" />
+            <HeroMintStat />
           </div>
         </div>
 

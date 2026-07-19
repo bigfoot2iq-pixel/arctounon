@@ -2,6 +2,7 @@ import { SITE, UTILITIES, BRIDGE_STEPS, MARKETPLACES, MINT_SCHEDULE } from "@/li
 import { SectionHeading } from "./ui/SectionHeading";
 import { Reveal } from "./ui/Reveal";
 import { ArrowUpRight } from "./icons";
+import { MintPhaseTile } from "./MintLive";
 
 function IconBadge({ children }: { children: React.ReactNode }) {
   return (
@@ -68,10 +69,7 @@ export function MintInfo() {
                 <p className="font-mono text-sm font-bold text-aurora">{MINT_SCHEDULE.length}</p>
                 <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.18em]">Phases</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-2.5">
-                <p className="font-mono text-sm font-bold text-aurora">TBA</p>
-                <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.18em]">Mint</p>
-              </div>
+              <MintPhaseTile />
             </div>
           </div>
         </Reveal>

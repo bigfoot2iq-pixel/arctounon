@@ -15,6 +15,7 @@ import {
   arctounonNftAbi,
   isNftConfigured,
 } from "@/lib/arctounon-nft";
+import { scheduleStatusFor } from "@/lib/useMintStatus";
 import { Reveal } from "./ui/Reveal";
 import { XIcon, Globe, Share, Verified, Plus, Minus, Clock, Wallet } from "./icons";
 import {
@@ -460,7 +461,16 @@ export function LaunchpadMint() {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="font-mono text-[11px] text-frost">{p.price}</span>
-                    <StatusPill status={p.status} />
+                    <StatusPill
+                      status={
+                        readEnabled
+                          ? scheduleStatusFor(p.name, {
+                              allowlistMintOpen: Boolean(allowlistMintOpen),
+                              publicMintOpen: Boolean(publicMintOpen),
+                            })
+                          : p.status
+                      }
+                    />
                   </div>
                 </li>
               ))}

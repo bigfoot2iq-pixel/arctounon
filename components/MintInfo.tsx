@@ -1,4 +1,4 @@
-import { SITE, UTILITIES, BRIDGE_STEPS, MARKETPLACES } from "@/lib/collection";
+import { SITE, UTILITIES, BRIDGE_STEPS, MARKETPLACES, MINT_SCHEDULE } from "@/lib/collection";
 import { SectionHeading } from "./ui/SectionHeading";
 import { Reveal } from "./ui/Reveal";
 import { ArrowUpRight } from "./icons";
@@ -48,14 +48,30 @@ export function MintInfo() {
             each generated from 6 trait layers. No stealth reprints, no hidden mints.
           </p>
 
-          <div className="mt-auto grid grid-cols-2 gap-3 pt-4">
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
-              <p className="font-mono text-2xl font-bold text-aurora">{SITE.supply.toLocaleString()}</p>
-              <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.18em]">Total</p>
+          <div className="mt-auto pt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
+                <p className="font-mono text-2xl font-bold text-aurora">{SITE.supply.toLocaleString()}</p>
+                <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.18em]">Total</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
+                <p className="font-mono text-2xl font-bold text-aurora">50+</p>
+                <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.18em]">Traits</p>
+              </div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
-              <p className="font-mono text-2xl font-bold text-aurora">50+</p>
-              <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.18em]">Traits</p>
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-2.5">
+                <p className="font-mono text-sm font-bold text-aurora">{SITE.chainName}</p>
+                <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.18em]">Chain</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-2.5">
+                <p className="font-mono text-sm font-bold text-aurora">{MINT_SCHEDULE.length}</p>
+                <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.18em]">Phases</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-2.5">
+                <p className="font-mono text-sm font-bold text-aurora">TBA</p>
+                <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.18em]">Mint</p>
+              </div>
             </div>
           </div>
         </Reveal>

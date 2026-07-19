@@ -255,6 +255,27 @@ export type Phase = {
 };
 
 export const MINT_SCHEDULE: Phase[] = [
-  { name: "Allowlist", note: "Guaranteed spot for the pack. Time TBA.", price: "TBA", status: "Soon" },
+  { name: "Allowlist", note: "Guaranteed spot for the pack. Time TBA.", price: "Free", status: "Soon" },
   { name: "Public", note: "Open to everyone on Arc. Time TBA.", price: "TBA", status: "Soon" },
 ];
+
+// ---- Allowlist page ------------------------------------------------------
+// Live mint state (phases, price, supply, per-wallet counts) is read from the
+// NFT contract at runtime — see lib/arctounon-nft.ts. The values below are just
+// copy + the X campaign the social tasks point at.
+
+// X (Twitter) handle used for the follow intent — screen_name, no leading @.
+export const X_HANDLE = "Arctounon";
+
+// The campaign post users like + retweet.
+// https://x.com/Arctounon/status/2078460401461719114
+export const ALLOWLIST_POST_ID = "2078460401461719114";
+
+// Celebration status users publish as the final task.
+export const ALLOWLIST_CELEBRATION =
+  "I just reserved my spot on the @Arctounon allowlist ❄️🐼\n\n2,222 pandas forging on Arc — free mint for the pack. Wen mint 👀 #Arctounon";
+
+// Seconds each social task "verifies" for. The tasks are honor-system — X can't
+// be checked without login — so completion is a client-side timer after the
+// intent opens, then the wallet self-registers on-chain via joinAllowlist().
+export const ALLOWLIST_TASK_SECONDS = 15;

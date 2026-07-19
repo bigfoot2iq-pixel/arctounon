@@ -1,22 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import { formatUnits } from "viem";
 import {
   SITE,
-  MINT_LIVE,
   MAX_PER_WALLET,
   SHOWCASE,
   COLLECTION_STATS,
   MINT_SCHEDULE,
 } from "@/lib/collection";
+import {
+  ARCTOUNON_NFT_ADDRESS,
+  arctounonNftAbi,
+  isNftConfigured,
+} from "@/lib/arctounon-nft";
+import { scheduleStatusFor } from "@/lib/useMintStatus";
 import { Reveal } from "./ui/Reveal";
 import { XIcon, Globe, Share, Verified, Plus, Minus, Clock, Wallet } from "./icons";
-import { useAccount, useSwitchChain } from "wagmi";
+import {
+  useAccount,
+  useSwitchChain,
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { arcChain, shortAddress } from "@/lib/arc-chain";
 
 const GALLERY_IMAGES = [SHOWCASE.hero, ...SHOWCASE.thumbs];
+
+const nftContract = {
+  address: ARCTOUNON_NFT_ADDRESS,
+  abi: arctounonNftAbi,
+  chainId: arcChain.id,
+} as const;
+
+type MintPhase = "allowlist" | "public" | "none";
 
 function StatusPill({ status }: { status: string }) {
   const live = status === "Live";
@@ -36,19 +56,44 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
-function MintCta({ qty }: { qty: number }) {
+function MintCta({
+  phase,
+  qty,
+  valueWei,
+  canMint,
+  onMinted,
+}: {
+  phase: MintPhase;
+  qty: number;
+  valueWei: bigint;
+  canMint: boolean;
+  onMinted: () => void;
+}) {
   const { address, isConnected, chainId } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { switchChain, isPending: switching, error: switchError } = useSwitchChain();
   const onArc = isConnected && chainId === arcChain.id;
 
+  const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
+  const { isLoading: confirming, isSuccess: confirmed } = useWaitForTransactionReceipt({ hash });
+
+  useEffect(() => {
+    if (confirmed) onMinted();
+  }, [confirmed, onMinted]);
+
+  const submit = () => {
+    reset();
+    if (phase === "allowlist") {
+      writeContract({ ...nftContract, functionName: "allowlistMint", args: [BigInt(qty)] });
+    } else if (phase === "public") {
+      writeContract({ ...nftContract, functionName: "publicMint", args: [BigInt(qty)], value: valueWei });
+    }
+  };
+
   let button: React.ReactNode;
   if (!isConnected) {
     button = (
-      <button
-        onClick={openConnectModal}
-        className="btn-aurora mt-3.5 h-11 w-full gap-1.5 text-sm"
-      >
+      <button onClick={openConnectModal} className="btn-aurora mt-3.5 h-11 w-full gap-1.5 text-sm">
         <Wallet className="h-4 w-4" />
         Connect wallet to mint
       </button>
@@ -63,13 +108,21 @@ function MintCta({ qty }: { qty: number }) {
         {switching ? "Switching…" : `Switch to ${arcChain.name}`}
       </button>
     );
+  } else if (phase === "none") {
+    button = (
+      <button disabled className="btn-aurora btn-soon mt-3.5 h-11 w-full text-sm">
+        {confirmed ? "Minted ✓" : "Mint — Coming Soon"}
+      </button>
+    );
   } else {
+    const label = phase === "allowlist" ? `Mint ${qty} free` : `Mint ${qty} now`;
     button = (
       <button
-        disabled={!MINT_LIVE}
-        className={"btn-aurora mt-3.5 h-11 w-full text-sm " + (!MINT_LIVE ? "btn-soon" : "")}
+        onClick={submit}
+        disabled={!canMint || isPending || confirming}
+        className="btn-aurora mt-3.5 h-11 w-full text-sm disabled:opacity-60"
       >
-        {MINT_LIVE ? `Mint ${qty} now` : "Mint — Coming Soon"}
+        {isPending ? "Confirm in wallet…" : confirming ? "Minting…" : confirmed ? "Minted ✓ — mint more" : label}
       </button>
     );
   }
@@ -77,9 +130,9 @@ function MintCta({ qty }: { qty: number }) {
   return (
     <>
       {button}
-      {switchError ? (
+      {(error || switchError) ? (
         <p className="mt-2 text-center text-[11px] text-violet" role="alert">
-          {switchError.message.split("\n")[0]}
+          {(error || switchError)!.message.split("\n")[0]}
         </p>
       ) : null}
       {isConnected && address ? (
@@ -95,8 +148,98 @@ export function LaunchpadMint() {
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
 
+  const { address, isConnected, chainId } = useAccount();
+  const onArc = isConnected && chainId === arcChain.id;
+  const readEnabled = isNftConfigured;
+  const walletReadEnabled = readEnabled && !!address;
+
+  // ---- Live contract reads -------------------------------------------------
+  const { data: allowlistMintOpen } = useReadContract({
+    ...nftContract, functionName: "allowlistMintOpen", query: { enabled: readEnabled },
+  });
+  const { data: publicMintOpen } = useReadContract({
+    ...nftContract, functionName: "publicMintOpen", query: { enabled: readEnabled },
+  });
+  const { data: publicPrice } = useReadContract({
+    ...nftContract, functionName: "publicPrice", query: { enabled: readEnabled },
+  });
+  const { data: totalMinted, refetch: refetchTotal } = useReadContract({
+    ...nftContract, functionName: "totalMinted", query: { enabled: readEnabled },
+  });
+  const { data: mintedByWallet, refetch: refetchMinted } = useReadContract({
+    ...nftContract, functionName: "minted", args: address ? [address] : undefined,
+    query: { enabled: walletReadEnabled },
+  });
+  const { data: allowance } = useReadContract({
+    ...nftContract, functionName: "allowlistAllowance", args: address ? [address] : undefined,
+    query: { enabled: walletReadEnabled },
+  });
+  const { data: freeMinted } = useReadContract({
+    ...nftContract, functionName: "freeMinted", args: address ? [address] : undefined,
+    query: { enabled: walletReadEnabled },
+  });
+
+  // ---- Derived phase + per-wallet limits ----------------------------------
+  const priceWei = (publicPrice ?? 0n) as bigint;
+  const mintedCount = Number(mintedByWallet ?? 0n);
+  const allowanceCount = Number(allowance ?? 0n);
+  const freeUsed = Number(freeMinted ?? 0n);
+  const walletRemaining = Math.max(0, MAX_PER_WALLET - mintedCount);
+  const allowlistRemaining = Math.max(0, Math.min(allowanceCount - freeUsed, walletRemaining));
+
+  const phase: MintPhase =
+    allowlistMintOpen && allowlistRemaining > 0
+      ? "allowlist"
+      : publicMintOpen
+        ? "public"
+        : "none";
+
+  // How many this wallet may mint right now in the active phase.
+  const maxQty =
+    phase === "allowlist" ? allowlistRemaining : phase === "public" ? walletRemaining : MAX_PER_WALLET;
+  const capForStepper = Math.max(1, maxQty);
+
+  // Keep the chosen quantity within the current cap.
+  useEffect(() => {
+    setQty((q) => Math.min(Math.max(1, q), capForStepper));
+  }, [capForStepper]);
+
   const dec = () => setQty((q) => Math.max(1, q - 1));
-  const inc = () => setQty((q) => Math.min(MAX_PER_WALLET, q + 1));
+  const inc = () => setQty((q) => Math.min(capForStepper, q + 1));
+
+  const isFree = phase === "allowlist";
+  const totalWei = isFree ? 0n : priceWei * BigInt(qty);
+  const canMint = onArc && phase !== "none" && maxQty > 0 && qty <= maxQty;
+
+  const perPandaLabel =
+    phase === "allowlist"
+      ? "Free"
+      : priceWei > 0n
+        ? `${formatUnits(priceWei, 18)}`
+        : "TBA";
+  const totalLabel = isFree
+    ? "Free"
+    : priceWei > 0n
+      ? `${formatUnits(totalWei, 18)} ${SITE.currency}`
+      : `TBA ${SITE.currency}`;
+
+  const supply = SITE.supply;
+  const minted = Number(totalMinted ?? 0n);
+  const mintedPct = Math.min(100, Math.max(2, (minted / supply) * 100));
+
+  const phaseTitle =
+    phase === "allowlist" ? "Allowlist Phase" : phase === "public" ? "Public Phase" : "Mint";
+  const phaseLive = phase !== "none";
+
+  const onMinted = useCallback(() => {
+    refetchTotal();
+    refetchMinted();
+  }, [refetchTotal, refetchMinted]);
+
+  // Live override of the static "Minted" stat.
+  const stats = COLLECTION_STATS.map((s) =>
+    s.label === "Minted" && readEnabled ? { ...s, value: minted.toLocaleString() } : s,
+  );
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-24 sm:px-6 sm:pt-28">
@@ -148,7 +291,7 @@ export function LaunchpadMint() {
 
         {/* Stats strip */}
         <div className="mt-3.5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] sm:grid-cols-4">
-          {COLLECTION_STATS.map((s) => (
+          {stats.map((s) => (
             <div key={s.label} className="bg-surface/60 px-3.5 py-2">
               <p className="font-mono text-sm font-bold text-frost">{s.value}</p>
               <p className="eyebrow mt-0.5 !text-[9px] !tracking-[0.16em]">{s.label}</p>
@@ -209,16 +352,16 @@ export function LaunchpadMint() {
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="eyebrow !text-[9px]">Mint phase</p>
-              <h2 className="mt-0.5 font-display text-base font-bold text-frost">Public Phase</h2>
+              <h2 className="mt-0.5 font-display text-base font-bold text-frost">{phaseTitle}</h2>
             </div>
-            <StatusPill status={MINT_LIVE ? "Live" : "Soon"} />
+            <StatusPill status={phaseLive ? "Live" : "Soon"} />
           </div>
 
           <div className="mt-3.5 flex items-end justify-between rounded-xl border border-white/10 bg-white/[0.02] px-3.5 py-2.5">
             <div>
               <p className="eyebrow !text-[9px] !tracking-[0.16em]">Price</p>
               <p className="mt-0.5 font-mono text-lg font-bold text-frost">
-                TBA <span className="text-sm text-muted">{SITE.currency}</span>
+                {perPandaLabel} {!isFree ? <span className="text-sm text-muted">{SITE.currency}</span> : null}
               </p>
             </div>
             <p className="font-mono text-[11px] text-faint">per panda</p>
@@ -228,7 +371,11 @@ export function LaunchpadMint() {
           <div className="mt-3">
             <div className="flex items-center justify-between">
               <p className="eyebrow !text-[9px] !tracking-[0.16em]">Quantity</p>
-              <p className="font-mono text-[11px] text-faint">Max {MAX_PER_WALLET} / wallet</p>
+              <p className="font-mono text-[11px] text-faint">
+                {isConnected && readEnabled
+                  ? `${walletRemaining} left · max ${MAX_PER_WALLET} / wallet`
+                  : `Max ${MAX_PER_WALLET} / wallet`}
+              </p>
             </div>
             <div className="mt-2 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-1.5">
               <button
@@ -242,7 +389,7 @@ export function LaunchpadMint() {
               <span className="font-display text-xl font-bold text-frost">{qty}</span>
               <button
                 onClick={inc}
-                disabled={qty >= MAX_PER_WALLET}
+                disabled={qty >= capForStepper}
                 aria-label="Increase"
                 className="btn-ghost h-9 w-9 p-0 disabled:opacity-30"
               >
@@ -254,29 +401,33 @@ export function LaunchpadMint() {
           {/* Total */}
           <div className="mt-3 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-3.5 py-2.5 font-mono text-[13px]">
             <span className="text-muted">Total</span>
-            <span className="flex items-center gap-2 text-sm font-bold text-frost">
-              TBA {SITE.currency}
-            </span>
+            <span className="flex items-center gap-2 text-sm font-bold text-frost">{totalLabel}</span>
           </div>
 
           {/* CTA — wallet-gated: connect, then be on Arc, then mint */}
-          <MintCta qty={qty} />
+          <MintCta phase={phase} qty={qty} valueWei={totalWei} canMint={canMint} onMinted={onMinted} />
+
+          {phase === "allowlist" ? (
+            <p className="mt-2 text-center text-[11px] text-teal">
+              Allowlist active — {allowlistRemaining} free mint{allowlistRemaining === 1 ? "" : "s"} left for you.
+            </p>
+          ) : null}
 
           {/* Supply progress */}
           <div className="mt-3.5 rounded-xl border border-white/10 bg-white/[0.02] p-3">
             <div className="flex items-center justify-between font-mono text-[11px] text-muted">
               <span>Minted</span>
               <span>
-                <span className="text-frost">0</span> / {SITE.supply.toLocaleString()}
+                <span className="text-frost">{minted.toLocaleString()}</span> / {supply.toLocaleString()}
               </span>
             </div>
             <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-              <div className="h-full rounded-full bg-gradient-to-r from-ice to-glacier" style={{ width: "2%" }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-ice to-glacier" style={{ width: `${mintedPct}%` }} />
             </div>
           </div>
 
           <p className="mt-3 text-center text-[11px] leading-relaxed text-faint">
-            Fees are set on-chain by the owner and may change before launch. Follow{" "}
+            Follow{" "}
             <a href={SITE.links.x} target="_blank" rel="noopener noreferrer" className="text-glacier hover:underline">
               @Arctounon
             </a>{" "}
@@ -291,9 +442,7 @@ export function LaunchpadMint() {
                 Mint schedule
               </h3>
               <a
-                href={SITE.links.x}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/allowlist"
                 className="text-[11px] text-glacier hover:underline"
               >
                 View eligibility
@@ -312,7 +461,16 @@ export function LaunchpadMint() {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="font-mono text-[11px] text-frost">{p.price}</span>
-                    <StatusPill status={p.status} />
+                    <StatusPill
+                      status={
+                        readEnabled
+                          ? scheduleStatusFor(p.name, {
+                              allowlistMintOpen: Boolean(allowlistMintOpen),
+                              publicMintOpen: Boolean(publicMintOpen),
+                            })
+                          : p.status
+                      }
+                    />
                   </div>
                 </li>
               ))}

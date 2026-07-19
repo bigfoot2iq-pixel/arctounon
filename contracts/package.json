@@ -1,0 +1,22 @@
+{
+  "name": "arctounon-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Arctounon NFT — ERC721A allowlist + public mint on Arc Chain",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network arcTestnet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.15",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.1.0",
+    "erc721a": "^4.3.0"
+  }
+}

@@ -112,3 +112,52 @@ export function Wallet({ className }: { className?: string }) {
     </svg>
   );
 }
+
+// ---- Allowlist task icons ----
+
+export function Check({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden {...strokeProps}>
+      <path d="m20 6-11 11-5-5" strokeWidth="2.2" />
+    </svg>
+  );
+}
+
+export function UserPlus({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden {...strokeProps}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M19 8v6M22 11h-6" />
+    </svg>
+  );
+}
+
+export function Heart({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden {...strokeProps}>
+      <path d="M12 20.7 3.6 12.3a4.6 4.6 0 0 1 6.5-6.5l1.9 1.9 1.9-1.9a4.6 4.6 0 0 1 6.5 6.5L12 20.7Z" />
+    </svg>
+  );
+}
+
+export function Repeat({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden {...strokeProps}>
+      <path d="m17 2 4 4-4 4" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <path d="m7 22-4-4 4-4" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </svg>
+  );
+}
+
+export function Megaphone({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden {...strokeProps}>
+      <path d="m3 11 15-5v12L3 13v-2Z" />
+      <path d="M18 8a3 3 0 0 1 0 6" />
+      <path d="M11.6 15.8a2.8 2.8 0 0 1-5.4-.8" />
+    </svg>
+  );
+}

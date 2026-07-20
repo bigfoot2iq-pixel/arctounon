@@ -17,78 +17,11 @@ describe("ArctounonNFT", () => {
     await nft.waitForDeployment();
   });
 
-  it("registers once, respecting the window, uniqueness and the global cap", async () => {
-    await expect(nft.connect(alice).joinAllowlist()).to.be.revertedWithCustomError(
-      nft,
-      "RegistrationClosed",
-    );
-
-    await nft.setRegistrationOpen(true);
-    await expect(nft.connect(alice).joinAllowlist())
-      .to.emit(nft, "Joined")
-      .withArgs(alice.address, 1n);
-    expect(await nft.allowlistAllowance(alice.address)).to.equal(1n);
-    expect(await nft.allowlistCount()).to.equal(1n);
-
-    await expect(nft.connect(alice).joinAllowlist()).to.be.revertedWithCustomError(
-      nft,
-      "AlreadyRegistered",
-    );
-
-    await nft.setMaxAllowlist(1);
-    await expect(nft.connect(bob).joinAllowlist()).to.be.revertedWithCustomError(
-      nft,
-      "AllowlistFull",
-    );
-  });
-
-  it("free allowlist mint is gated by phase, membership and allowance", async () => {
-    await nft.setRegistrationOpen(true);
-    await nft.connect(alice).joinAllowlist(); // allowance 1
-
-    await expect(nft.connect(alice).allowlistMint(1)).to.be.revertedWithCustomError(
-      nft,
-      "AllowlistClosed",
-    );
-
-    await nft.setAllowlistMintOpen(true);
-    await expect(nft.connect(bob).allowlistMint(1)).to.be.revertedWithCustomError(
-      nft,
-      "NotAllowlisted",
-    );
-    await expect(nft.connect(alice).allowlistMint(2)).to.be.revertedWithCustomError(
-      nft,
-      "ExceedsAllowance",
-    );
-
-    await nft.connect(alice).allowlistMint(1);
-    expect(await nft.balanceOf(alice.address)).to.equal(1n);
-    expect(await nft.minted(alice.address)).to.equal(1n);
-    expect(await nft.ownerOf(1)).to.equal(alice.address); // tokens start at #1
-
-    await expect(nft.connect(alice).allowlistMint(1)).to.be.revertedWithCustomError(
-      nft,
-      "ExceedsAllowance",
-    );
-  });
-
-  it("owner can bump a wallet's allowance; the 5 cap spans both phases", async () => {
-    await nft.setAllowlistMintOpen(true);
-    await nft.setAllowlistAllowance([alice.address], 5);
-    expect(await nft.allowlistCount()).to.equal(1n);
-
-    await nft.connect(alice).allowlistMint(5);
-    expect(await nft.balanceOf(alice.address)).to.equal(5n);
-
-    // At the cap now — a public mint on top must be rejected.
-    await nft.setPublicMintOpen(true);
-    await nft.setPublicPrice(price);
-    await expect(
-      nft.connect(alice).publicMint(1, { value: price }),
-    ).to.be.revertedWithCustomError(nft, "ExceedsWalletCap");
-  });
-
   it("public mint needs exact payment and honors the per-wallet cap", async () => {
+    await expect(
+      nft.connect(bob).publicMint(1, { value: price }),
+    ).to.be.revertedWithCustomError(nft, "PublicClosed");
+
     await nft.setPublicMintOpen(true);
     await nft.setPublicPrice(price);
 
@@ -102,6 +35,7 @@ describe("ArctounonNFT", () => {
 
     await nft.connect(bob).publicMint(3, { value: price * 3n });
     expect(await nft.balanceOf(bob.address)).to.equal(3n);
+    expect(await nft.ownerOf(1)).to.equal(bob.address); // tokens start at #1
 
     await expect(
       nft.connect(bob).publicMint(3, { value: price * 3n }),
@@ -110,6 +44,24 @@ describe("ArctounonNFT", () => {
     await nft.connect(bob).publicMint(2, { value: price * 2n });
     expect(await nft.minted(bob.address)).to.equal(5n);
     expect(await nft.remainingForWallet(bob.address)).to.equal(0n);
+  });
+
+  it("owner mints for free to any address, exempt from the per-wallet cap", async () => {
+    await expect(nft.connect(alice).ownerMint(alice.address, 1)).to.be.revertedWithCustomError(
+      nft,
+      "OwnableUnauthorizedAccount",
+    );
+    await expect(nft.ownerMint(alice.address, 0)).to.be.revertedWithCustomError(
+      nft,
+      "ZeroQuantity",
+    );
+
+    // Owner can mint past the per-wallet cap (5) — it only bounds public mints.
+    await nft.ownerMint(alice.address, 8);
+    expect(await nft.balanceOf(alice.address)).to.equal(8n);
+    expect(await nft.totalMinted()).to.equal(8n);
+    // ownerMint doesn't touch the public per-wallet counter.
+    expect(await nft.minted(alice.address)).to.equal(0n);
   });
 
   it("lets the owner withdraw proceeds", async () => {
@@ -125,9 +77,7 @@ describe("ArctounonNFT", () => {
   });
 
   it("serves per-token metadata and reverts for unknown ids", async () => {
-    await nft.setPublicMintOpen(true);
-    await nft.setPublicPrice(0);
-    await nft.connect(bob).publicMint(1, { value: 0 });
+    await nft.ownerMint(bob.address, 1);
 
     expect(await nft.tokenURI(1)).to.equal("ipfs://base/1.json");
     await expect(nft.tokenURI(999)).to.be.revertedWithCustomError(

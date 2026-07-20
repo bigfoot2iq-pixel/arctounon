@@ -12,12 +12,8 @@ async function main() {
   console.log("name:", await nft.name());
   console.log("symbol:", await nft.symbol());
   console.log("owner:", await nft.owner());
-  console.log("registrationOpen:", await nft.registrationOpen());
-  console.log("allowlistMintOpen:", await nft.allowlistMintOpen());
   console.log("publicMintOpen:", await nft.publicMintOpen());
   console.log("publicPriceWei:", (await nft.publicPrice()).toString());
-  console.log("allowlistDefaultAllowance:", (await nft.allowlistDefaultAllowance()).toString());
-  console.log("allowlistCount:", (await nft.allowlistCount()).toString());
   console.log("totalMinted:", (await nft.totalMinted()).toString());
   console.log("MAX_PER_WALLET:", (await nft.MAX_PER_WALLET()).toString());
   console.log("MAX_SUPPLY:", (await nft.MAX_SUPPLY()).toString());

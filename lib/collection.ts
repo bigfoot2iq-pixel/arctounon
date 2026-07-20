@@ -255,7 +255,7 @@ export type Phase = {
 };
 
 export const MINT_SCHEDULE: Phase[] = [
-  { name: "Allowlist", note: "Guaranteed spot for the pack. Time TBA.", price: "Free", status: "Soon" },
+  { name: "Allowlist", note: "Reserve your spot with the pack. Time TBA.", price: "TBA", status: "Soon" },
   { name: "Public", note: "Open to everyone on Arc. Time TBA.", price: "TBA", status: "Soon" },
 ];
 
@@ -273,9 +273,10 @@ export const ALLOWLIST_POST_ID = "2078460401461719114";
 
 // Celebration status users publish as the final task.
 export const ALLOWLIST_CELEBRATION =
-  "I just reserved my spot on the @Arctounon allowlist ❄️🐼\n\n2,222 pandas forging on Arc — free mint for the pack. Wen mint 👀 #Arctounon";
+  "I just joined the @Arctounon allowlist ❄️🐼\n\n2,222 pandas forging on Arc. Wen mint 👀 #Arctounon";
 
 // Seconds each social task "verifies" for. The tasks are honor-system — X can't
 // be checked without login — so completion is a client-side timer after the
-// intent opens, then the wallet self-registers on-chain via joinAllowlist().
+// intent opens. When all tasks are done the wallet is saved to the off-chain
+// allowlist (Supabase) — no transaction, no gas.
 export const ALLOWLIST_TASK_SECONDS = 15;

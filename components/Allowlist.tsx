@@ -1,20 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  useAccount,
-  useSwitchChain,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-} from "wagmi";
+import Image from "next/image";
+import { useAccount } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
-import { arcChain, shortAddress } from "@/lib/arc-chain";
-import {
-  ARCTOUNON_NFT_ADDRESS,
-  arctounonNftAbi,
-  isNftConfigured,
-} from "@/lib/arctounon-nft";
+import { shortAddress } from "@/lib/arc-chain";
 import {
   X_HANDLE,
   ALLOWLIST_POST_ID,
@@ -72,7 +62,7 @@ const TASKS: {
   {
     id: "post",
     title: "Post your celebration",
-    subtitle: "Tell X you just reserved your spot.",
+    subtitle: "Tell X you just joined the allowlist.",
     action: "Post",
     icon: (c) => <Megaphone {...c} />,
     href: () =>
@@ -80,17 +70,38 @@ const TASKS: {
   },
 ];
 
-const nftContract = {
-  address: ARCTOUNON_NFT_ADDRESS,
-  abi: arctounonNftAbi,
-  chainId: arcChain.id,
-} as const;
-
 type Statuses = Record<TaskId, TaskStatus>;
 type Timers = Record<TaskId, number>;
 
 const initialStatuses: Statuses = { follow: "idle", like: "idle", retweet: "idle", post: "idle" };
 const initialTimers: Timers = { follow: 0, like: 0, retweet: 0, post: 0 };
+
+const submittedKey = (addr: string) => `arc_allowlist:${addr.toLowerCase()}`;
+
+// A handful of pandas from the collection, shown as the "pack" on this page.
+const ALLOWLIST_ART = ["/art/2.png", "/art/7.png", "/art/9.png", "/art/11.png", "/art/4.png"];
+
+/** Overlapping circular panda avatars — the pack you're joining. */
+function PackCluster() {
+  return (
+    <div className="mt-4 flex items-center justify-center">
+      <div className="flex -space-x-3">
+        {ALLOWLIST_ART.map((src, i) => (
+          <span
+            key={src}
+            style={{ zIndex: ALLOWLIST_ART.length - i }}
+            className="ring-aurora relative h-11 w-11 overflow-hidden rounded-full border-2 border-space"
+          >
+            <Image src={src} alt="" fill sizes="44px" className="object-cover" />
+          </span>
+        ))}
+        <span className="relative flex h-11 w-11 items-center justify-center rounded-full border-2 border-space bg-white/[0.06] font-mono text-[10px] font-bold text-glacier">
+          2222
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function TaskRow({
   index,
@@ -202,16 +213,18 @@ function Centered({ children }: { children: React.ReactNode }) {
   );
 }
 
+type JoinState = "idle" | "submitting" | "done" | "error";
+
 export function Allowlist() {
   const [mounted, setMounted] = useState(false);
   const [statuses, setStatuses] = useState<Statuses>(initialStatuses);
   const [timers, setTimers] = useState<Timers>(initialTimers);
+  const [joinState, setJoinState] = useState<JoinState>("idle");
+  const [joinError, setJoinError] = useState("");
   const intervals = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
-  const { address, isConnected, isReconnecting, chainId } = useAccount();
+  const { address, isConnected, isReconnecting } = useAccount();
   const { openConnectModal } = useConnectModal();
-  const { switchChain, isPending: switching } = useSwitchChain();
-  const onArc = isConnected && chainId === arcChain.id;
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -219,52 +232,18 @@ export function Allowlist() {
     return () => Object.values(map).forEach(clearInterval);
   }, []);
 
-  // ---- On-chain reads (always from Arc, regardless of wallet's network) ----
-  const enabledRead = isNftConfigured;
-  const { data: registrationOpen } = useReadContract({
-    ...nftContract,
-    functionName: "registrationOpen",
-    query: { enabled: enabledRead },
-  });
-  const {
-    data: allowance,
-    refetch: refetchAllowance,
-    isLoading: allowanceLoading,
-  } = useReadContract({
-    ...nftContract,
-    functionName: "allowlistAllowance",
-    args: address ? [address] : undefined,
-    // Cache the "already joined?" result for the whole session. Only a full
-    // page refresh (new QueryClient) re-checks; our own join flow refetches
-    // explicitly on success. No refetch on remount/focus/reconnect.
-    query: {
-      enabled: enabledRead && !!address,
-      staleTime: Infinity,
-      gcTime: Infinity,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-    },
-  });
-  const { data: allowlistCount } = useReadContract({
-    ...nftContract,
-    functionName: "allowlistCount",
-    query: { enabled: enabledRead },
-  });
-  const { data: maxAllowlist } = useReadContract({
-    ...nftContract,
-    functionName: "maxAllowlist",
-    query: { enabled: enabledRead },
-  });
-
-  const isRegistered = (allowance ?? 0n) > 0n;
-
-  // ---- joinAllowlist write ----
-  const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
-  const { isLoading: confirming, isSuccess: confirmed } = useWaitForTransactionReceipt({ hash });
-
+  // Remember, per wallet, that this browser already submitted — so a returning
+  // visitor lands straight on the confirmation instead of the task list.
   useEffect(() => {
-    if (confirmed) refetchAllowance();
-  }, [confirmed, refetchAllowance]);
+    if (!address) {
+      setJoinState("idle");
+      return;
+    }
+    const already =
+      typeof window !== "undefined" && window.localStorage.getItem(submittedKey(address));
+    setJoinState(already ? "done" : "idle");
+    setJoinError("");
+  }, [address]);
 
   const startTask = useCallback((id: TaskId, href: string) => {
     window.open(href, "_blank", "noopener,noreferrer");
@@ -294,13 +273,28 @@ export function Allowlist() {
   const socialEnabled = (i: number) =>
     isConnected && (i === 0 || statuses[TASKS[i - 1].id] === "done");
 
-  const onReserve = () => {
-    reset();
-    writeContract({ ...nftContract, functionName: "joinAllowlist" });
-  };
+  const onJoin = useCallback(async () => {
+    if (!address) return;
+    setJoinState("submitting");
+    setJoinError("");
+    try {
+      const res = await fetch("/api/allowlist", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ wallet: address }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error || "Could not join. Please try again.");
+      if (typeof window !== "undefined") window.localStorage.setItem(submittedKey(address), "1");
+      setJoinState("done");
+    } catch (e) {
+      setJoinError(e instanceof Error ? e.message : "Could not join. Please try again.");
+      setJoinState("error");
+    }
+  }, [address]);
 
   // ---- Gated render states -------------------------------------------------
-  if (!mounted) {
+  if (!mounted || isReconnecting) {
     return (
       <Centered>
         <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-white/15 border-t-glacier" />
@@ -309,56 +303,21 @@ export function Allowlist() {
     );
   }
 
-  if (!isNftConfigured) {
+  if (joinState === "done" && address) {
     return (
       <Centered>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-violet/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-violet">
-          <span className="h-1.5 w-1.5 rounded-full bg-violet" /> Coming soon
-        </span>
-        <h1 className="mt-4 font-display text-2xl font-bold text-frost">Allowlist opens soon</h1>
-        <p className="mt-2 text-sm text-muted">
-          The allowlist isn&apos;t live yet. Follow{" "}
-          <a
-            href={`https://x.com/${X_HANDLE}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-glacier hover:underline"
-          >
-            @{X_HANDLE}
-          </a>{" "}
-          to catch the go-live.
-        </p>
-      </Centered>
-    );
-  }
-
-  // While the wallet reconnects on load, or the on-chain "already joined?"
-  // check is still in flight, hold on a loader so a registered wallet never
-  // flashes the task list.
-  const checkingJoined =
-    isReconnecting || (isConnected && !!address && allowanceLoading);
-  if (checkingJoined) {
-    return (
-      <Centered>
-        <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-white/15 border-t-glacier" />
-        <p className="mt-4 text-xs uppercase tracking-widest text-muted">
-          Checking allowlist status…
-        </p>
-      </Centered>
-    );
-  }
-
-  if (isRegistered && address) {
-    return (
-      <Centered>
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-teal/15 text-teal">
-          <Check className="h-7 w-7" />
+        <div className="relative mx-auto h-20 w-20">
+          <span className="ring-aurora relative block h-20 w-20 overflow-hidden rounded-2xl">
+            <Image src="/art/9.png" alt="Arctounon panda" fill sizes="80px" className="object-cover" />
+          </span>
+          <span className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-space bg-teal text-space">
+            <Check className="h-4 w-4" />
+          </span>
         </div>
         <h1 className="mt-4 font-display text-2xl font-bold text-frost">You&apos;re on the allowlist</h1>
         <p className="mt-2 text-sm text-muted">
-          {(allowance ?? 0n).toString()} free mint{allowance === 1n ? "" : "s"} reserved for{" "}
-          <span className="font-mono text-frost">{shortAddress(address)}</span>. We&apos;ll open the
-          allowlist mint on{" "}
+          <span className="font-mono text-frost">{shortAddress(address)}</span> is saved. Being on the
+          allowlist doesn&apos;t guarantee a mint — we&apos;ll announce the details on{" "}
           <a
             href={`https://x.com/${X_HANDLE}`}
             target="_blank"
@@ -381,23 +340,18 @@ export function Allowlist() {
     );
   }
 
-  const registrationClosed = registrationOpen === false;
-  const spots =
-    (maxAllowlist ?? 0n) > 0n
-      ? `${(allowlistCount ?? 0n).toString()} / ${(maxAllowlist ?? 0n).toString()} spots`
-      : `${(allowlistCount ?? 0n).toString()} reserved`;
-
   return (
     <div className="mx-auto max-w-xl px-4 pb-16 pt-24 sm:px-6 sm:pt-28">
       <Reveal className="text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-glacier">
-          <span className="h-1 w-1 rounded-full bg-glacier" /> Allowlist · Free mint
+          <span className="h-1 w-1 rounded-full bg-glacier" /> Allowlist
         </span>
-        <h1 className="mt-3 font-display text-2xl font-bold tracking-tight text-frost sm:text-3xl">
+        <PackCluster />
+        <h1 className="mt-4 font-display text-2xl font-bold tracking-tight text-frost sm:text-3xl">
           Reserve your spot
         </h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-          Complete the tasks, then reserve a guaranteed free mint on-chain. {spots}.
+          Complete the tasks to add your wallet to the Arctounon allowlist.
         </p>
       </Reveal>
 
@@ -426,7 +380,7 @@ export function Allowlist() {
             icon={<Wallet className="h-5 w-5" />}
             status={isConnected ? "done" : "idle"}
             timer={0}
-            enabled={!registrationClosed}
+            enabled
             onStart={() => openConnectModal?.()}
             external={false}
           />
@@ -440,48 +394,32 @@ export function Allowlist() {
               icon={t.icon({ className: "h-5 w-5" })}
               status={statuses[t.id]}
               timer={timers[t.id]}
-              enabled={socialEnabled(i) && !registrationClosed}
+              enabled={socialEnabled(i)}
               onStart={() => startTask(t.id, t.href())}
             />
           ))}
         </div>
 
-        {/* Reserve */}
+        {/* Join */}
         <div className="mt-4">
-          {registrationClosed ? (
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center text-[11px] font-bold uppercase tracking-widest text-muted">
-              Registration is closed
-            </div>
-          ) : allDone && !onArc ? (
-            <button
-              onClick={() => switchChain({ chainId: arcChain.id })}
-              disabled={switching}
-              className="btn-aurora h-11 w-full text-sm disabled:opacity-60"
-            >
-              {switching ? "Switching…" : `Switch to ${arcChain.name}`}
-            </button>
-          ) : (
-            <button
-              onClick={onReserve}
-              disabled={!allDone || isPending || confirming}
-              className={"btn-aurora h-11 w-full text-sm " + (!allDone ? "btn-soon" : "")}
-            >
-              {isPending
-                ? "Confirm in wallet…"
-                : confirming
-                  ? "Reserving…"
-                  : allDone
-                    ? "Reserve my spot"
-                    : "Complete all tasks to reserve"}
-            </button>
-          )}
-          {error ? (
+          <button
+            onClick={onJoin}
+            disabled={!allDone || joinState === "submitting"}
+            className={"btn-aurora h-11 w-full text-sm " + (!allDone ? "btn-soon" : "")}
+          >
+            {joinState === "submitting"
+              ? "Saving…"
+              : allDone
+                ? "Join the allowlist"
+                : "Complete all tasks to join"}
+          </button>
+          {joinState === "error" && joinError ? (
             <p className="mt-2 text-center text-[11px] text-violet" role="alert">
-              {error.message.split("\n")[0]}
+              {joinError}
             </p>
           ) : null}
           <p className="mt-2.5 text-center text-[11px] text-faint">
-            Reserving writes your wallet to the Arctounon contract — one small transaction.
+            No transaction, no gas — we just save your wallet address.
           </p>
         </div>
       </Reveal>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { isAddress } from "viem";
 import { useAccount } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { shortAddress } from "@/lib/arc-chain";
@@ -221,6 +222,10 @@ export function Allowlist() {
   const [timers, setTimers] = useState<Timers>(initialTimers);
   const [joinState, setJoinState] = useState<JoinState>("idle");
   const [joinError, setJoinError] = useState("");
+  // The wallet we actually save. Auto-filled from the connected account, but
+  // editable so mints can be routed to a different address if the user wants.
+  const [wallet, setWallet] = useState("");
+  const [submittedWallet, setSubmittedWallet] = useState("");
   const intervals = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
   const { address, isConnected, isReconnecting } = useAccount();
@@ -237,11 +242,19 @@ export function Allowlist() {
   useEffect(() => {
     if (!address) {
       setJoinState("idle");
+      setWallet("");
       return;
     }
+    setWallet(address);
     const already =
-      typeof window !== "undefined" && window.localStorage.getItem(submittedKey(address));
-    setJoinState(already ? "done" : "idle");
+      typeof window !== "undefined" ? window.localStorage.getItem(submittedKey(address)) : null;
+    if (already) {
+      // Stored value is the wallet that was submitted (may differ from address).
+      setSubmittedWallet(already === "1" ? address : already);
+      setJoinState("done");
+    } else {
+      setJoinState("idle");
+    }
     setJoinError("");
   }, [address]);
 
@@ -273,25 +286,39 @@ export function Allowlist() {
   const socialEnabled = (i: number) =>
     isConnected && (i === 0 || statuses[TASKS[i - 1].id] === "done");
 
+  const trimmedWallet = wallet.trim();
+  const walletValid = isAddress(trimmedWallet);
+  const walletError = trimmedWallet.length > 0 && !walletValid;
+
   const onJoin = useCallback(async () => {
-    if (!address) return;
+    const w = wallet.trim();
+    if (!isAddress(w)) {
+      setJoinError("Enter a valid wallet address.");
+      setJoinState("error");
+      return;
+    }
     setJoinState("submitting");
     setJoinError("");
     try {
       const res = await fetch("/api/allowlist", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ wallet: address }),
+        body: JSON.stringify({ wallet: w }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(data.error || "Could not join. Please try again.");
-      if (typeof window !== "undefined") window.localStorage.setItem(submittedKey(address), "1");
+      // Key on the connected account so a returning visitor lands on the
+      // confirmation; store the submitted wallet so we can show it back.
+      if (typeof window !== "undefined" && address) {
+        window.localStorage.setItem(submittedKey(address), w);
+      }
+      setSubmittedWallet(w);
       setJoinState("done");
     } catch (e) {
       setJoinError(e instanceof Error ? e.message : "Could not join. Please try again.");
       setJoinState("error");
     }
-  }, [address]);
+  }, [wallet, address]);
 
   // ---- Gated render states -------------------------------------------------
   if (!mounted || isReconnecting) {
@@ -316,7 +343,7 @@ export function Allowlist() {
         </div>
         <h1 className="mt-4 font-display text-2xl font-bold text-frost">You&apos;re on the allowlist</h1>
         <p className="mt-2 text-sm text-muted">
-          <span className="font-mono text-frost">{shortAddress(address)}</span> is saved. Being on the
+          <span className="font-mono text-frost">{shortAddress(submittedWallet || address)}</span> is saved. Being on the
           allowlist doesn&apos;t guarantee a mint — we&apos;ll announce the details on{" "}
           <a
             href={`https://x.com/${X_HANDLE}`}
@@ -400,12 +427,42 @@ export function Allowlist() {
           ))}
         </div>
 
+        {/* Wallet address — auto-filled from the connected account, editable. */}
+        <div className="mt-4">
+          <label htmlFor="wallet" className="eyebrow !text-[9px]">
+            Your wallet address
+          </label>
+          <input
+            id="wallet"
+            type="text"
+            inputMode="text"
+            spellCheck={false}
+            autoComplete="off"
+            value={wallet}
+            onChange={(e) => setWallet(e.target.value)}
+            placeholder="0x…"
+            disabled={!isConnected}
+            className={
+              "mt-1.5 h-11 w-full rounded-xl border bg-white/[0.03] px-3 font-mono text-[13px] text-frost outline-none transition-colors placeholder:text-faint disabled:opacity-40 " +
+              (walletError ? "border-violet focus:border-violet" : "border-white/10 focus:border-glacier")
+            }
+          />
+          <p
+            className={"mt-1.5 text-[11px] " + (walletError ? "text-violet" : "text-faint")}
+            role={walletError ? "alert" : undefined}
+          >
+            {walletError
+              ? "Enter a valid wallet address."
+              : "Auto-filled from your connected wallet — edit to send mints elsewhere."}
+          </p>
+        </div>
+
         {/* Join */}
         <div className="mt-4">
           <button
             onClick={onJoin}
-            disabled={!allDone || joinState === "submitting"}
-            className={"btn-aurora h-11 w-full text-sm " + (!allDone ? "btn-soon" : "")}
+            disabled={!allDone || !walletValid || joinState === "submitting"}
+            className={"btn-aurora h-11 w-full text-sm " + (!allDone || !walletValid ? "btn-soon" : "")}
           >
             {joinState === "submitting"
               ? "Saving…"

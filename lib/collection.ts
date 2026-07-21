@@ -268,8 +268,8 @@ export const MINT_SCHEDULE: Phase[] = [
 export const X_HANDLE = "Arctounon";
 
 // The campaign post users like + retweet.
-// https://x.com/Arctounon/status/2078460401461719114
-export const ALLOWLIST_POST_ID = "2078460401461719114";
+// https://x.com/Arctounon/status/2079502833624187221
+export const ALLOWLIST_POST_ID = "2079502833624187221";
 
 // Celebration status users publish as the final task.
 export const ALLOWLIST_CELEBRATION =

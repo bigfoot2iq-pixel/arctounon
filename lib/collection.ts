@@ -273,7 +273,7 @@ export const ALLOWLIST_POST_ID = "2078460401461719114";
 
 // Celebration status users publish as the final task.
 export const ALLOWLIST_CELEBRATION =
-  "I just joined the @Arctounon allowlist ❄️🐼\n\n2,222 pandas forging on Arc. Wen mint 👀 #Arctounon";
+  "I just reserved my spot on the @Arctounon allowlist 🐼\n𝟐,𝟐𝟐𝟐 𝐏𝐚𝐧𝐝𝐚𝐬 are coming to @arc 𝐂𝐡𝐚𝐢𝐧. 👀\nComplete the tasks, then claim your spot while it's available.";
 
 // Seconds each social task "verifies" for. The tasks are honor-system — X can't
 // be checked without login — so completion is a client-side timer after the

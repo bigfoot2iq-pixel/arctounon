@@ -7,18 +7,28 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const url = new URL(request.url);
 
-  let rows: { wallet: string; created_at: string }[];
+  type Row = { wallet: string; created_at: string };
+  const rows: Row[] = [];
   try {
     const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from(ARC_ALLOWLIST_TABLE)
-      .select("wallet, created_at")
-      .order("created_at", { ascending: true });
-    if (error) {
-      console.error("[allowlist/download] query failed:", error.message);
-      return Response.json({ error: "Query failed." }, { status: 500 });
+    // PostgREST caps a single .select() at its max-rows setting (1000 by
+    // default), so a naive query silently drops everyone past the first 1000.
+    // Page through in fixed batches until a short page signals the end.
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from(ARC_ALLOWLIST_TABLE)
+        .select("wallet, created_at")
+        .order("created_at", { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) {
+        console.error("[allowlist/download] query failed:", error.message);
+        return Response.json({ error: "Query failed." }, { status: 500 });
+      }
+      const batch = (data ?? []) as Row[];
+      rows.push(...batch);
+      if (batch.length < PAGE) break;
     }
-    rows = (data ?? []) as typeof rows;
   } catch (e) {
     console.error("[allowlist/download] supabase error:", e);
     return Response.json({ error: "Allowlist is unavailable." }, { status: 503 });

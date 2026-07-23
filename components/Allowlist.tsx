@@ -11,6 +11,7 @@ import {
   ALLOWLIST_POST_ID,
   ALLOWLIST_CELEBRATION,
   ALLOWLIST_TASK_SECONDS,
+  ALLOWLIST_DEADLINE,
 } from "@/lib/collection";
 import { Reveal } from "./ui/Reveal";
 import {
@@ -206,6 +207,67 @@ function TaskRow({
   );
 }
 
+// ---- Countdown ----------------------------------------------------------
+const DEADLINE_MS = Date.parse(ALLOWLIST_DEADLINE);
+
+/** Ticks once a second, returns time left to the allowlist deadline. */
+function useCountdown() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const diff = Math.max(0, DEADLINE_MS - now);
+  const totalSec = Math.floor(diff / 1000);
+  return {
+    closed: diff <= 0,
+    hours: Math.floor(totalSec / 3600),
+    minutes: Math.floor((totalSec % 3600) / 60),
+    seconds: totalSec % 60,
+  };
+}
+
+function TimeBlock({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="ring-aurora flex h-14 w-14 items-center justify-center rounded-xl bg-white/[0.03] font-mono text-2xl font-bold tabular-nums text-frost sm:h-16 sm:w-16 sm:text-[28px]">
+        {String(value).padStart(2, "0")}
+      </div>
+      <span className="font-mono text-[9px] uppercase tracking-widest text-faint">{label}</span>
+    </div>
+  );
+}
+
+/** Clean, urgency-building banner showing time left before the list locks. */
+function CountdownBanner({
+  hours,
+  minutes,
+  seconds,
+}: {
+  hours: number;
+  minutes: number;
+  seconds: number;
+}) {
+  return (
+    <Reveal delay={30} className="glass mt-5 rounded-2xl border border-teal/25 p-5 text-center">
+      <div className="inline-flex items-center gap-1.5">
+        <span className="pulse-dot relative h-1.5 w-1.5 rounded-full bg-teal text-teal" />
+        <span className="eyebrow !text-[9px] !text-teal">Allowlist closing</span>
+      </div>
+      <div className="mt-3.5 flex items-center justify-center gap-2 sm:gap-3">
+        <TimeBlock value={hours} label="Hours" />
+        <span className="-mt-4 font-mono text-2xl font-bold text-faint">:</span>
+        <TimeBlock value={minutes} label="Mins" />
+        <span className="-mt-4 font-mono text-2xl font-bold text-faint">:</span>
+        <TimeBlock value={seconds} label="Secs" />
+      </div>
+      <p className="mt-4 text-[12px] text-muted">
+        Spots lock when the timer hits zero. Join the pack before it&apos;s gone.
+      </p>
+    </Reveal>
+  );
+}
+
 function Centered({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-xl px-4 pb-16 pt-28 sm:pt-32">
@@ -230,6 +292,7 @@ export function Allowlist() {
 
   const { address, isConnected, isReconnecting } = useAccount();
   const { openConnectModal } = useConnectModal();
+  const { closed, hours, minutes, seconds } = useCountdown();
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -291,6 +354,11 @@ export function Allowlist() {
   const walletError = trimmedWallet.length > 0 && !walletValid;
 
   const onJoin = useCallback(async () => {
+    if (Date.now() >= DEADLINE_MS) {
+      setJoinError("The allowlist has closed.");
+      setJoinState("error");
+      return;
+    }
     const w = wallet.trim();
     if (!isAddress(w)) {
       setJoinError("Enter a valid wallet address.");
@@ -367,6 +435,43 @@ export function Allowlist() {
     );
   }
 
+  // Timer ran out — lock the list for anyone who hasn't already joined.
+  if (closed) {
+    return (
+      <Centered>
+        <div className="relative mx-auto h-20 w-20">
+          <span className="relative block h-20 w-20 overflow-hidden rounded-2xl opacity-70 grayscale">
+            <Image src="/art/4.png" alt="Arctounon panda" fill sizes="80px" className="object-cover" />
+          </span>
+        </div>
+        <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-faint">
+          Allowlist closed
+        </span>
+        <h1 className="mt-3 font-display text-2xl font-bold text-frost">The window has closed</h1>
+        <p className="mt-2 text-sm text-muted">
+          Allowlist submissions are locked. Follow{" "}
+          <a
+            href={`https://x.com/${X_HANDLE}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-glacier hover:underline"
+          >
+            @{X_HANDLE}
+          </a>{" "}
+          for public mint details.
+        </p>
+        <a
+          href={`https://x.com/${X_HANDLE}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-ghost mt-5 inline-flex h-10 gap-1.5 px-4 text-sm"
+        >
+          <XIcon className="h-3.5 w-3.5" /> Follow for updates
+        </a>
+      </Centered>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-xl px-4 pb-16 pt-24 sm:px-6 sm:pt-28">
       <Reveal className="text-center">
@@ -381,6 +486,9 @@ export function Allowlist() {
           Complete the tasks to add your wallet to the Arctounon allowlist.
         </p>
       </Reveal>
+
+      {/* Countdown — the list locks when this hits zero */}
+      <CountdownBanner hours={hours} minutes={minutes} seconds={seconds} />
 
       {/* Progress */}
       <Reveal delay={60} className="glass mt-5 rounded-2xl p-4">

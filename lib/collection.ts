@@ -280,3 +280,9 @@ export const ALLOWLIST_CELEBRATION =
 // intent opens. When all tasks are done the wallet is saved to the off-chain
 // allowlist (Supabase) — no transaction, no gas.
 export const ALLOWLIST_TASK_SECONDS = 15;
+
+// Hard deadline after which the allowlist stops accepting wallets. Set to a
+// FIXED instant (ISO 8601, UTC "Z") so every visitor sees the same countdown —
+// a per-visit "48h from now" would reset on each reload. To relaunch a fresh
+// 48h window, set this to (open time + 48h). Currently: 48h after campaign open.
+export const ALLOWLIST_DEADLINE = "2026-07-25T20:00:00Z";

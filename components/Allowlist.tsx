@@ -221,7 +221,8 @@ function useCountdown() {
   const totalSec = Math.floor(diff / 1000);
   return {
     closed: diff <= 0,
-    hours: Math.floor(totalSec / 3600),
+    days: Math.floor(totalSec / 86400),
+    hours: Math.floor((totalSec % 86400) / 3600),
     minutes: Math.floor((totalSec % 3600) / 60),
     seconds: totalSec % 60,
   };
@@ -240,10 +241,12 @@ function TimeBlock({ value, label }: { value: number; label: string }) {
 
 /** Clean, urgency-building banner showing time left before the list locks. */
 function CountdownBanner({
+  days,
   hours,
   minutes,
   seconds,
 }: {
+  days: number;
   hours: number;
   minutes: number;
   seconds: number;
@@ -255,6 +258,12 @@ function CountdownBanner({
         <span className="eyebrow !text-[9px] !text-teal">Allowlist closing</span>
       </div>
       <div className="mt-3.5 flex items-center justify-center gap-2 sm:gap-3">
+        {days > 0 && (
+          <>
+            <TimeBlock value={days} label="Days" />
+            <span className="-mt-4 font-mono text-2xl font-bold text-faint">:</span>
+          </>
+        )}
         <TimeBlock value={hours} label="Hours" />
         <span className="-mt-4 font-mono text-2xl font-bold text-faint">:</span>
         <TimeBlock value={minutes} label="Mins" />
@@ -292,7 +301,7 @@ export function Allowlist() {
 
   const { address, isConnected, isReconnecting } = useAccount();
   const { openConnectModal } = useConnectModal();
-  const { closed, hours, minutes, seconds } = useCountdown();
+  const { closed, days, hours, minutes, seconds } = useCountdown();
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -488,7 +497,7 @@ export function Allowlist() {
       </Reveal>
 
       {/* Countdown — the list locks when this hits zero */}
-      <CountdownBanner hours={hours} minutes={minutes} seconds={seconds} />
+      <CountdownBanner days={days} hours={hours} minutes={minutes} seconds={seconds} />
 
       {/* Progress */}
       <Reveal delay={60} className="glass mt-5 rounded-2xl p-4">

@@ -284,6 +284,6 @@ export const ALLOWLIST_TASK_SECONDS = 15;
 // Hard deadline after which the allowlist stops accepting wallets. Set to a
 // FIXED instant (ISO 8601, UTC "Z") so every visitor sees the same countdown —
 // a per-visit "24h from now" would reset on each reload. To relaunch a fresh
-// window, set this to (open time + window length). Currently: 24h window
-// reopened 2026-07-29, closing 2026-07-30 22:00 UTC.
-export const ALLOWLIST_DEADLINE = "2026-07-30T22:00:00Z";
+// window, set this to (open time + window length). Currently: extended window
+// reopened 2026-08-05, closing 2026-09-16 22:00 UTC.
+export const ALLOWLIST_DEADLINE = "2026-09-16T22:00:00Z";
